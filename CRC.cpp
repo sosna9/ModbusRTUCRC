@@ -1,9 +1,10 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
 #include <sstream>
 #include <iomanip>
 #include <chrono>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -42,7 +43,6 @@ const uint16_t crcTable[256] = {
     0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 };
 
-
 uint16_t calculateCRC(const vector<uint8_t>& data) {
     uint16_t crc = 0xFFFF;
     for (uint8_t byte : data) {
@@ -51,8 +51,18 @@ uint16_t calculateCRC(const vector<uint8_t>& data) {
     return (crc >> 8) | (crc << 8);
 }
 
-vector<uint8_t> parseHexInput(const string& input) {
+string removeWhitespaces(const string& input) {
+    string output;
+    output.reserve(input.size());
+    for (char c : input) {
+        if (!isspace(static_cast<unsigned char>(c))) {
+            output.push_back(c);
+        }
+    }
+    return output;
+}
 
+vector<uint8_t> parseHexInput(const string& input) {
     vector<uint8_t> byteSequence;
     for (size_t i = 0; i < input.size(); i += 2) {
         string byteString = input.substr(i, 2);
@@ -69,11 +79,13 @@ int main() {
 
         while (true) {
             string hexInput;
-            cout << "Wprowadz dane (hex, max 256 bytes) ";
+            cout << "Wprowadz dane (hex, max 256 bytes): ";
             getline(cin, hexInput);
+            hexInput = removeWhitespaces(hexInput);
 
             try {
                 byteSequence = parseHexInput(hexInput);
+                cout << "Wprowadzone dane maja " << byteSequence.size() << " bajtow" << endl;
                 if (byteSequence.size() > 256) {
                     throw length_error("Bledne dane (max. 256 bytes).");
                 }
@@ -93,16 +105,13 @@ int main() {
 
             if (cin.fail() || n < 1 || n > 1000000000) {
                 cerr << "Bledne dane. Wprowadz liczbe powtorzen (od 1 do 1000000000):" << endl;
-                cin.clear(); // Clear the error flag
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore invalid input
+                cin.clear(); 
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
             }
             else {
                 break;
             }
         }
-
-        
-
 
         uint16_t crcValue;
         auto start = chrono::high_resolution_clock::now();
@@ -111,14 +120,14 @@ int main() {
         }
         auto end = chrono::high_resolution_clock::now();
 
-        // Calculate duration in milliseconds
+
         chrono::duration<long double, micro> duration = end - start;
         long double duration_ms = duration.count();
         duration_ms /= 1000;
         cout << "Obliczone CRC: " << hex << uppercase << setw(4) << setfill('0') << crcValue << endl;
         cout << "Calkowity czas dla " << dec << n << " powtorzen: " << fixed << setprecision(4) << duration_ms << " ms" << endl;
 
-        // Clear the newline character from the input buffer
+ 
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
